@@ -16,23 +16,6 @@
             "default_value": "anime"
         },
         {
-            "id": "provider",
-            "type": "select",
-            "name": "Select the provider",
-            "description": "Default - Gogo Anime, Supported providers: Gogo Anime, Yugen Anime",
-            "default_value": "gogoanime",
-            "options": [
-                {
-                    "text": "Gogo Anime",
-                    "value": "gogoanime"
-                },
-                {
-                    "text": "Yugen Anime",
-                    "value": "yugenanime"
-                }
-            ]
-        },
-        {
             "id": "video_quality",
             "type": "select",
             "name": "Select video quality",

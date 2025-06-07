@@ -1,14 +1,19 @@
 from ulauncher.api.client.EventListener import EventListener
 from ulauncher.api.shared.action.RenderResultListAction import RenderResultListAction
 from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
-from ulauncher.api.shared.action.DoNothingAction import DoNothingAction
 from ulauncher.api.shared.action.SetUserQueryAction import SetUserQueryAction
 from ulauncher.api.shared.item.ExtensionSmallResultItem import ExtensionSmallResultItem
 from ulauncher.api.shared.action.ExtensionCustomAction import ExtensionCustomAction
 from anipy_api.provider import LanguageTypeEnum
 
+from anipy_api.anime import Anime
+
 
 class ItemEnterEventListener(EventListener):
+
+    def reset(self, extension):
+        '''Reset to keyword'''
+        return SetUserQueryAction(f"{extension.preferences['keyword']} ")
 
     def search_anime(self, data, extension):
         '''Show search anime result to user'''
@@ -30,7 +35,7 @@ class ItemEnterEventListener(EventListener):
                     icon="images/icon.png",
                     name="No anime found by this name",
                     description="Please search again",
-                    on_enter=DoNothingAction())
+                    on_enter=self.reset(extension))
             ])
 
         # If error
@@ -40,13 +45,13 @@ class ItemEnterEventListener(EventListener):
                     icon="images/icon.png",
                     name="Error : " + anime_search_result,
                     description="Please search again",
-                    on_enter=DoNothingAction())
+                    on_enter=self.reset(extension))
             ])
 
         # If Present
         if anime_search_result is not None:
-            animes = anime_search_result["animes"]
-            is_next = anime_search_result["next"]
+            animes: list[Anime] = anime_search_result["animes"]
+            is_next: bool = anime_search_result["next"]
             output = []
 
             if curr_list > 1:
@@ -159,26 +164,20 @@ class ItemEnterEventListener(EventListener):
             # Get max episode count
             max_episode = extension.get_anime_max_episode_no()
 
-            if max_episode is str:
-                return RenderResultListAction([
-                    ExtensionResultItem(
-                        icon="images/icon.png",
-                        name=max_episode,
-                        description="Please search again",
-                        on_enter=DoNothingAction())
-                ])
-
-            if max_episode is None:
+            # If max episode is str then show error
+            if max_episode is None or isinstance(max_episode, str):
                 return RenderResultListAction([
                     ExtensionResultItem(
                         icon="images/icon.png",
                         name="No episode found for this anime",
-                        description="Please search again",
-                        on_enter=DoNothingAction())
+                        description=max_episode,
+                        on_enter=self.reset(extension))
                 ])
-            list_end = 16 if max_episode > 15 else max_episode + 1
 
+            # If max episode is int set up list
+            list_end = 16 if max_episode > 15 else max_episode + 1
             extension.set_current_anime_max_episode(max_episode)
+
         else:
             max_episode = extension.get_current_anime_max_episode()
 
@@ -199,6 +198,8 @@ class ItemEnterEventListener(EventListener):
                         f"{extension.preferences['keyword']} type episode number : ")
                 ))
 
+        # Episode list logic below
+
         # Show prev option after 1st list
         if list_start > 1:
             output.append(
@@ -212,7 +213,7 @@ class ItemEnterEventListener(EventListener):
                         "list_end": list_start
                     }, keep_app_open=True)
                 ))
-
+        # Show last episodes option if all episode not listed in first list
         elif list_start == 1 and max_episode > list_end - 1:
             output.append(
                 ExtensionSmallResultItem(
@@ -265,14 +266,30 @@ class ItemEnterEventListener(EventListener):
                         if max_episode >= list_end + 15 else max_episode + 1
                     }, keep_app_open=True)
                 ))
-            
+
         return RenderResultListAction(output)
 
     def open_episode(self, data, extension):
         '''Open episode or show error to user'''
 
         if data["action"] == "open_episode_direcly":
-            anime = data["anime"]
+            anime: Anime = data["anime"]
+
+            providers = extension.read_from_provider_file()
+
+            providers_name = []
+            for p in providers:
+                providers_name.append(p["NAME"])
+
+            if anime.provider not in providers_name:
+                return RenderResultListAction([
+                    ExtensionResultItem(
+                        icon="images/icon.png",
+                        name=f"Provider : {anime.provider} currently not avaiable",
+                        description="Please search again",
+                        on_enter=self.reset(extension))
+                ])
+
             extension.set_current_anime(anime)
 
         is_open_episode = extension.open_episode_in_player(
@@ -281,22 +298,22 @@ class ItemEnterEventListener(EventListener):
             extension.preferences['video_quality']
         )
 
-        if isinstance(is_open_episode, bool) and not is_open_episode:
+        if is_open_episode is not None and isinstance(is_open_episode, bool) and is_open_episode is False:
             return RenderResultListAction([
                 ExtensionResultItem(
                     icon="images/icon.png",
-                    name="No episode found for this anime",
+                    name="Selected episode not available for this anime",
                     description="Please search again",
-                    on_enter=DoNothingAction())
+                    on_enter=self.reset(extension))
             ])
 
-        if isinstance(is_open_episode, str):
+        if is_open_episode is not None and isinstance(is_open_episode, str):
             return RenderResultListAction([
                 ExtensionResultItem(
                     icon="images/icon.png",
-                    name="Error : " + is_open_episode,
-                    description="Error Occurred while playing video",
-                    on_enter=DoNothingAction())
+                    name="Error occurred while playing the video",
+                    description="Error : " + is_open_episode,
+                    on_enter=self.reset(extension))
             ])
 
         return None
@@ -304,7 +321,22 @@ class ItemEnterEventListener(EventListener):
     def open_anime_history(self, data, extension):
         '''Show selected anime history to user'''
 
-        anime = data["anime"]
+        anime: Anime = data["anime"]
+        providers = extension.read_from_provider_file()
+
+        providers_name = []
+        for p in providers:
+            providers_name.append(p["NAME"])
+
+        if anime.provider not in providers_name:
+            return RenderResultListAction([
+                ExtensionResultItem(
+                    icon="images/icon.png",
+                    name=f"Provider : {anime.provider} currently not avaiable",
+                    description="Please search again",
+                    on_enter=self.reset(extension))
+            ])
+
         extension.set_current_anime(anime)
 
         max_episode = extension.get_anime_max_episode_no()
@@ -315,16 +347,16 @@ class ItemEnterEventListener(EventListener):
                     icon="images/icon.png",
                     name="Error while obtaining streaming link",
                     description="Please search again",
-                    on_enter=DoNothingAction())
+                    on_enter=self.reset(extension))
             ])
 
         if max_episode is None:
             return RenderResultListAction([
                 ExtensionResultItem(
                     icon="images/icon.png",
-                    name="No episode found for this anime",
+                    name="Selected episode not available for this anime",
                     description="Please search again",
-                    on_enter=DoNothingAction())
+                    on_enter=self.reset(extension))
             ])
 
         extension.set_current_anime_max_episode(max_episode)
@@ -424,13 +456,48 @@ class ItemEnterEventListener(EventListener):
             ExtensionSmallResultItem(
                 icon="images/icon.png",
                 name="Deleted all items" if delete_all else "Deleted selected item",
-                on_enter=SetUserQueryAction(
-                    extension.preferences['keyword'])
+                on_enter=self.reset(extension)
+            )
+        ])
+
+    def update_provider(self, data, extension):
+        '''Set the current provider'''
+        provider = data["provider"]
+        output = []
+        if not provider["SELECTED"]:
+            extension.update_provider(provider)
+            output.append(
+                ExtensionSmallResultItem(
+                    icon="images/icon.png",
+                    name="Provider updated",
+                    on_enter=self.reset(extension)
+                )
+            )
+        else:
+            return RenderResultListAction([
+                ExtensionSmallResultItem(
+                    icon="images/icon.png",
+                    name="Provider already selected",
+                    on_enter=self.reset(extension)
+                )
+            ])
+
+        return RenderResultListAction(output)
+
+    def reset_provider(self, extension):
+        '''Resets the provider list'''
+        extension.reset_provider()
+
+        return RenderResultListAction([
+            ExtensionSmallResultItem(
+                icon="images/icon.png",
+                name="Provider reset successful",
+                on_enter=self.reset(extension)
             )
         ])
 
     def on_event(self, event, extension):
-
+        '''Event Handler'''
         data = event.get_data()
 
         if data["action"] == "search_anime":
@@ -447,6 +514,14 @@ class ItemEnterEventListener(EventListener):
         if data["action"] == "open_episode" or data["action"] == "open_episode_direcly":
             return self.open_episode(data, extension)
 
+        # Provider
+        if data["action"] == "update_provider":
+            return self.update_provider(data, extension)
+
+        if data["action"] == "reset_provider":
+            return self.reset_provider(extension)
+
+        # History Related Below
         if data["action"] == "open_anime_history":
             return self.open_anime_history(data, extension)
 

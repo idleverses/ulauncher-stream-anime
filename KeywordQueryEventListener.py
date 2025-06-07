@@ -83,8 +83,8 @@ class KeywordQueryEventListener(EventListener):
                 output.append(
                     ExtensionResultItem(
                         icon="images/icon.png",
-                        name=f"{provider["NAME"]}",
-                        description=f"{provider["BASE_URL"]} {"(Current Provider)" if provider["SELECTED"] else "(Enter to select this as a provider)"}",
+                        name=f"{provider['NAME']}",
+                        description=f"{provider['BASE_URL']} {'(Current Provider)' if provider['SELECTED'] else '(Enter to select this as a provider)'}",
                         on_enter=ExtensionCustomAction({
                             "action": "update_provider",
                             "provider": provider,

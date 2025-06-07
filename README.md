@@ -13,19 +13,36 @@
 ![Demo](https://github.com/user-attachments/assets/510fc413-b578-4734-a2de-b1f61f69cfbd)
  
 ## Requirements
+- Python 3.12+.
+- Python package : ```anipy-api```. Version should be `3.5.8`. To install you can use any one of the below commands.
+  ```bash
+  pip install anipy-api
+  pip3 install anipy-api
+  ```
 - Install any of the supported player :
   - [Mpv](https://mpv.io) (Recommended)
   - [VLC](https://www.videolan.org/)
   - [Syncplay](https://syncplay.pl)
-- Python  package `anipy-api` to install: ```pip install anipy-api```
 
 ## Installation
 - Open `Ulauncher` go to `Extensions` > `Add extension` and paste ```https://github.com/soumiknandi/ulauncher-stream-anime/```
 
 ## Configuration
-- Update the `keyword`, `player`, `video quality` and `anime provider` from ulauncher extension settings according to your preferences. ![Configuration](https://github.com/user-attachments/assets/adf71496-6f6d-4aa8-abb2-514d4e4aaf1c)
+- Update the `keyword`, `player`, `video quality` from ulauncher extension settings according to your preferences. ![Configuration](https://github.com/user-attachments/assets/adf71496-6f6d-4aa8-abb2-514d4e4aaf1c)
 
-- If video is loading slowly or not opening at all try changing the `anime provider` and `video quality`.
+- Update `anime provider` from the `anime menu`.
+
+## Tested On
+
+- Ubuntu Desktop 24.04.2
+- Linux Mint 22.1 Cinnamon
+
+## Important
+
+> [!IMPORTANT] 
+> If video is loading slowly, not loading or giving any try changing the `anime provider` and `video quality`.
+> Make sure anipy-api version is `3.5.8` and python is `3.12+`
+
 
 ## License
 This project is licensed under the terms of the GNU General Public License v3.0. See the [LICENSE](./LICENSE.md) file for details.

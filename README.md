@@ -35,9 +35,9 @@
 - Update the `keyword`, `player`, `video quality` from ulauncher extension settings according to your preferences. ![Configuration](https://github.com/user-attachments/assets/9e538586-d825-42fb-8031-175813dde448)
 
 - Update `anime provider` from the `anime menu`.
-</br>
+
 ![Provider1](https://github.com/user-attachments/assets/c2df0cf4-cd47-4d59-928c-dd7cb7e5b262)
-</br>
+
 ![Provider2](https://github.com/user-attachments/assets/5a1d9662-7391-4ec6-ac3b-e698640ef4a1)
 
 ## Tested On

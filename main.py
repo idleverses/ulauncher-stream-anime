@@ -1,8 +1,11 @@
 from pathlib import Path
+import json
+import os
 
 from anipy_api.anime import Anime
 from anipy_api.locallist import LocalList
 from anipy_api.provider import get_provider
+from anipy_api.provider import list_providers
 from anipy_api.player import get_player
 from anipy_api.error import LangTypeNotAvailableError
 
@@ -22,13 +25,89 @@ class StreamAnime(Extension):
     max_episode = 0
     anime_list = []
 
+    SETTINGS_FOLDER_PATH = Path(Path(__file__).parent) / "settings"
+    PROVIDER_FILE_PATH = SETTINGS_FOLDER_PATH / "provider.json"
+
     def __init__(self):
         super().__init__()
         self.subscribe(KeywordQueryEvent, KeywordQueryEventListener())
         self.subscribe(ItemEnterEvent, ItemEnterEventListener())
 
-    def set_up_provider(self, provider):
-        self.provider = get_provider(provider)
+    def create_file_if_not_exist(self):
+        '''Create provider settings file if it doesnt exists'''
+
+        os.makedirs(self.SETTINGS_FOLDER_PATH, exist_ok=True)
+        if not os.path.exists(self.PROVIDER_FILE_PATH):
+            with open(self.PROVIDER_FILE_PATH, "w") as f:
+                f.write("")
+
+    def add_all_provider_in_settings(self):
+        '''Get all providers from anipy-api and add it to the file with selected tag'''
+
+        provider_with_select = []
+        selected = True
+        for provider in list_providers():
+            p = {
+                "NAME": provider.NAME,
+                "BASE_URL": provider.BASE_URL,
+                "SELECTED": selected
+            }
+            provider_with_select.append(p)
+            selected = False
+        return provider_with_select
+
+    def write_all_provider_to_provider_file(self, providers):
+        '''Write to provider settings file'''
+
+        with open(self.PROVIDER_FILE_PATH, "w") as f:
+            json.dump(providers, f, indent=4)
+            f.close()
+
+    def read_from_provider_file(self):
+        '''Read provider settings file'''
+
+        self.create_file_if_not_exist()
+        with open(self.PROVIDER_FILE_PATH, "r") as f:
+            content = f.read().strip()
+            if content:
+                data = json.loads(content)
+                return data
+
+        providers = self.add_all_provider_in_settings()
+        self.write_all_provider_to_provider_file(providers)
+
+        return self.read_from_provider_file()
+
+    def update_provider(self, data):
+        '''Update the provider and flush it to the file'''
+        providers = self.read_from_provider_file()
+
+        for provider in providers:
+            if provider["NAME"] == data["NAME"]:
+                provider["SELECTED"] = True
+            else:
+                provider["SELECTED"] = False
+
+        self.write_all_provider_to_provider_file(providers)
+
+    def reset_provider(self):
+        self.create_file_if_not_exist()
+        providers = self.add_all_provider_in_settings()
+        self.write_all_provider_to_provider_file(providers)
+
+    def set_up_provider(self):
+        '''Initiate the provider settings'''
+
+        providers = self.read_from_provider_file()
+
+        for p in providers:
+            if p["SELECTED"] is True:
+                self.provider = get_provider(p["NAME"])
+                break
+
+    def open_anime_info(self, anime: Anime):
+        anime_info = self.provider.get_info(anime.identifier)
+        return anime_info
 
     def set_current_anime(self, selected_anime):
         if selected_anime is not None:
@@ -74,9 +153,7 @@ class StreamAnime(Extension):
         except requests.exceptions.ConnectionError:
             return "Unable to connect to " + self.provider.BASE_URL
         except Exception as e:
-            return str(e)
-
-    #
+            return "Error while searching anime : " + str(e)
 
     def show_anime_list(self, curr_list):
         '''Helps to paginate anime search result'''
@@ -119,7 +196,7 @@ class StreamAnime(Extension):
         except ConnectionError:
             return str("Unable to connect to " + self.provider.BASE_URL)
         except Exception as e:
-            return str(e)
+            return "Error while fetching episode list : " + str(e)
 
     def open_episode_in_player(self, episode, player, quality):
         '''Open episode of seleted anime and selected ep no'''
@@ -144,7 +221,7 @@ class StreamAnime(Extension):
         except LangTypeNotAvailableError:
             return False
         except Exception as e:
-            return str(e)
+            return "Error while opening the episode : " + str(e)
 
     # History Below
 

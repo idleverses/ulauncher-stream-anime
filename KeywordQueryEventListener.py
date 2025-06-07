@@ -6,6 +6,8 @@ from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 from ulauncher.api.shared.item.ExtensionSmallResultItem import ExtensionSmallResultItem
 from ulauncher.api.shared.action.SetUserQueryAction import SetUserQueryAction
 
+from anipy_api.locallist import LocalListEntry
+
 
 class KeywordQueryEventListener(EventListener):
 
@@ -72,6 +74,37 @@ class KeywordQueryEventListener(EventListener):
                     on_enter=DoNothingAction())
             ])
 
+        if "provider" in str(args):
+            output = []
+
+            providers = extension.read_from_provider_file()
+
+            for provider in providers:
+                output.append(
+                    ExtensionResultItem(
+                        icon="images/icon.png",
+                        name=f"{provider["NAME"]}",
+                        description=f"{provider["BASE_URL"]} {"(Current Provider)" if provider["SELECTED"] else "(Enter to select this as a provider)"}",
+                        on_enter=ExtensionCustomAction({
+                            "action": "update_provider",
+                            "provider": provider,
+                        }, keep_app_open=True)
+                    )
+                )
+
+            output.append(
+                ExtensionResultItem(
+                    icon="images/icon.png",
+                    name="Reset provider list",
+                    description="Run this after updating anipy-api",
+                    on_enter=ExtensionCustomAction({
+                        "action": "reset_provider"
+                    }, keep_app_open=True)
+                )
+            )
+
+            return RenderResultListAction(output)
+
         # When user selects history
         if "history" in str(args) or str(args).replace("history page ", "").isdigit():
             output = []
@@ -96,7 +129,7 @@ class KeywordQueryEventListener(EventListener):
                     )
                 )
             else:
-                anime_history = history["animes"]
+                anime_history: list[LocalListEntry] = history["animes"]
                 is_next = history["next"]
 
                 if page > 1:
@@ -145,7 +178,7 @@ class KeywordQueryEventListener(EventListener):
 
         # Default Options
 
-        extension.set_up_provider(extension.preferences["provider"])
+        extension.set_up_provider()
 
         output = []
 
@@ -167,6 +200,15 @@ class KeywordQueryEventListener(EventListener):
                 name="Watch history",
                 description="View your watch history",
                 on_enter=SetUserQueryAction(f"{extension.preferences['keyword']} history"))
+        )
+
+        # Show anime provider option
+        output.append(
+            ExtensionResultItem(
+                icon="images/icon.png",
+                name="Anime provider",
+                description="Change/Update your anime provider",
+                on_enter=SetUserQueryAction(f"{extension.preferences['keyword']} provider"))
         )
 
         # Show continue last watched anime option

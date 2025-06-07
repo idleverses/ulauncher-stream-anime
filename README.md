@@ -46,10 +46,10 @@
 ## Important
 
 > [!IMPORTANT] 
-> If video is loading slowly, not loading or giving any try changing the `anime provider` and `video quality`.
+> If video loads slowly, not loading or getting issues while searching, try changing the `anime provider` and `video quality`.
 
 > [!IMPORTANT]
-> Make sure anipy-api version is `3.5.8` and python is `3.12+`
+> Make sure anipy-api version is `3.5.8` and python version is `3.12+`
 
 
 ## License

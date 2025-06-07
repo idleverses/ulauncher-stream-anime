@@ -36,7 +36,7 @@
 
 - Update `anime provider` from the `anime menu`. \
 ![Provider1](https://github.com/user-attachments/assets/c2df0cf4-cd47-4d59-928c-dd7cb7e5b262) \
-
+![Provider2](https://github.com/user-attachments/assets/5a1d9662-7391-4ec6-ac3b-e698640ef4a1)
 
 ## Tested On
 
